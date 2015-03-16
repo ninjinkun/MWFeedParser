@@ -221,6 +221,32 @@
 				if (!string) string = [[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
 				if (!string) string = [[NSString alloc] initWithData:data encoding:NSMacOSRomanStringEncoding];
 			}
+
+            if (!textEncodingName) {
+                if ([string hasPrefix:@"<?xml"]) {
+                    NSError *error;
+                    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"encoding=\"([^\"]+)\""
+                                                                                           options:NSRegularExpressionCaseInsensitive
+                                                                                             error:&error];
+                    NSArray *matches = [regex matchesInString:string options:0 range:NSMakeRange(0, string.length)];
+                    if (matches.count) {
+                        NSTextCheckingResult *res = [matches objectAtIndex:0];
+                        if (res.numberOfRanges > 1) {
+                            NSRange range = [res rangeAtIndex:1];
+                            if (range.location != NSNotFound) {
+                                textEncodingName = [string substringWithRange:range];
+                                if (textEncodingName) {
+                                    CFStringEncoding cfEncoding = CFStringConvertIANACharSetNameToEncoding((CFStringRef)textEncodingName);
+                                    if (cfEncoding != kCFStringEncodingInvalidId) {
+                                        nsEncoding = CFStringConvertEncodingToNSStringEncoding(cfEncoding);
+                                        if (nsEncoding != 0) string = [[NSString alloc] initWithData:data encoding:nsEncoding];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 			
 			// Nil data
 			data = nil;
