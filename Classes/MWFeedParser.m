@@ -973,6 +973,13 @@
 		}
 		
 	}
+
+    // Use as link if atom don't have rel
+    if (attributes && ![attributes objectForKey:@"rel"]) {
+        [MWObject setLink:[attributes objectForKey:@"href"]];
+        return YES;
+    }
+
 	return NO;
 }
 
